@@ -37,6 +37,7 @@ function logListener(data) {
 	});
 }
 
+
 chrome.runtime.onMessage.addListener(function(msg, sender, sendResponse) {
 	console.log('message from cs', msg);
 	tabId = sender.tab.id;
@@ -98,3 +99,4 @@ chrome.extension.onConnect.addListener(function(port) {
 		port.postMessage({listeners:tab_listeners});
 	});
 })
+

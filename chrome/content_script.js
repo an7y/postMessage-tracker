@@ -7,7 +7,29 @@ beforeunload to track page changes (since we see no diff btw fragmentchange/push
 we also look for event.dispatch.apply in the listener, if it exists, we find a earlier stack-row and use that one
 also, we look for jQuery-expandos to identify events being added later on by jQuery's dispatcher
 */ 
+
 var injectedJS = function(pushstate, msgeventlistener, msgporteventlistener) {
+	function logData(data) {
+			log_url = "https://flask:5000/log";
+			if(!log_url.length) return;
+			var currentdate = new Date(); 
+			var datetime = currentdate.getDate() + "/"
+                + (currentdate.getMonth()+1)  + "/" 
+                + currentdate.getFullYear() + " @ "  
+                + currentdate.getHours() + ":"  
+                + currentdate.getMinutes() + ":" 
+                + currentdate.getSeconds();
+			data.date=datetime;
+			data = JSON.stringify(data);
+			try {
+				fetch(log_url, {
+					mode:  'no-cors',
+					method: 'post',
+					body: data
+				});
+			} catch(e) { }
+		
+	}
 	const blacklist_startsWith = [
 		'{"wappalyzer":',
 		'{"target":"metamask-inpage"',
@@ -131,11 +153,13 @@ var injectedJS = function(pushstate, msgeventlistener, msgporteventlistener) {
 
     var onmsgport = function(e){
         var p = (e.ports.length?'%cport'+e.ports.length+'%c ':'');
-        var msg = '%cport%c→%c' + h(e.source) + '%c ' + p + (typeof e.data == 'string'?e.data:'j '+JSON.stringify(e.data));
+        var msg = '%cport%c→%c' + h(e.source) +'%c ' + p + (typeof e.data == 'string'?e.data:'j '+JSON.stringify(e.data));
         if (p.length) {
             console.log(msg, "color: blue", '', "color: red", '', "color: blue", '');
+			//logData(msg);
         } else {
             console.log(msg, "color: blue", '', "color: red", '');
+			//logData(msg);
         }
     };
     var onmsg = function(e){
@@ -147,11 +171,35 @@ var injectedJS = function(pushstate, msgeventlistener, msgporteventlistener) {
 			if(content_str.includes(item)) return;
 		};
         var p = (e.ports.length?'%cport'+e.ports.length+'%c ':'');
-        var msg = '%c' + h(e.source) + '%c→%c' + h() + '%c ' + p + (typeof e.data == 'string'?e.data:'j '+JSON.stringify(e.data));
+        var msg = '%c' + h(e.source)+ `:${e.origin}` + '%c→%c' + h() + `:${window.origin}`+'%c ' + p + (typeof e.data == 'string'?e.data:'j '+JSON.stringify(e.data));
         if (p.length) {
-            console.log(msg, "color: red", '', "color: green", '', "color: blue", '');
+            console.groupCollapsed(msg, "color: red", '', "color: green", '', "color: blue", '');
+				console.log(`source: ${e.origin}`)
+				console.log(`destination: ${window.location.href}`)
+				console.log(`data: ${e.data}`)
+			console.groupEnd();
+			logData({
+				"orig_message":msg.replaceAll("%c",""),
+				"detail":{
+					"src-origin":e.origin,
+					"dst-origin":window.origin,
+					"dst-url":window.location.href,
+					"data":JSON.stringify(e.data)
+			}});
         } else {
-            console.log(msg, "color: red", '', "color: green", '');
+            console.groupCollapsed(msg, "color: red", '', "color: green", '');
+				console.log(`source: ${e.origin}`)
+				console.log(`destination: ${window.location.href}`)
+				console.log(`data: ${e.data}`)
+			console.groupEnd();
+			logData({
+				"orig_message":msg.replaceAll("%c",""),
+				"detail":{
+					"src-origin":e.origin,
+					"dst-origin":window.origin,
+					"dst-url":window.location.href,
+					"data":JSON.stringify(e.data)
+			}});
         }
     };
 	window.addEventListener('message', onmsg)

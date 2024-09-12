@@ -17,7 +17,7 @@ function loaded() {
 window.onload = loaded
 //addEventListener('DOMContentLoaded', loaded);
 
-function listListeners(listeners) {
+async function listListeners(listeners) {
 	var x = document.getElementById('x');
 	x.parentElement.removeChild(x);
 	x = document.createElement('ol');
